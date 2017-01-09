@@ -71,7 +71,7 @@ module OffsitePayments #:nodoc:
         end
 
         # Realex accepts currency amounts as an integer in the lowest value
-        # e.g. 
+        # e.g.
         #     format_amount(110.56, 'GBP')
         #     => 11056
         def format_amount(amount, currency)
@@ -88,6 +88,7 @@ module OffsitePayments #:nodoc:
         end
 
         def extract_digits(value)
+          return unless value
           value.scan(/\d+/).join('')
         end
 
