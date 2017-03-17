@@ -400,7 +400,8 @@ module OffsitePayments #:nodoc:
         # Was the transaction complete?
         def complete?
           #     <input type="hidden" name="MerchantApiResponse[request_status]" value="completed">
-        params['MerchantApiResponse']['request_status'] == "completed"
+          logger.warn "Got params: #{params.inspect}"
+        params[:MerchantApiResponse][:request_status] == "completed"
         end
 
         #             <input type="hidden" name="MerchantApiResponse[status]" value="OK">
@@ -418,60 +419,60 @@ module OffsitePayments #:nodoc:
         # <tt>COMPLETE</tt>::
         def status
           #             <input type="hidden" name="MerchantApiResponse[status]" value="OK">
-          params['MerchantApiResponse']['status']
+          params[:MerchantApiResponse][:status]
         end
 
         def order_ref
 
-          params['order_ref']
+          params[:order_ref]
 
         end
 
         def request_status
           #     <input type="hidden" name="MerchantApiResponse[request_status]" value="completed">
-          params['MerchantApiResponse']['request_status']
+          params[:MerchantApiResponse][:request_status]
         end
 
         # Id of this transaction (uniq Paytoo transaction id)
         def transaction_id
           #     <input type="hidden" name="MerchantApiResponse[tr_id]" value="22782">
 
-        params['MerchantApiResponse']['tr_id']
+        params[:MerchantApiResponse][:tr_id]
         end
 
         def request_id
           #     <input type="hidden" name="MerchantApiResponse[request_id]" value="11122">
 
-        params['MerchantApiResponse']['request_id']
+        params[:MerchantApiResponse][:request_id]
         end
 
         # Id of this transaction (uniq Shopify transaction id)
         def reference_id
           #     <input type="hidden" name="MerchantApiResponse[ref_id]" value="1234">
 
-        params['MerchantApiResponse']['ref_id']
+        params[:MerchantApiResponse][:ref_id]
         end
 
         # The total amount which the payer paid.
         def amount
           #<input type="hidden" name="MerchantApiResponse[PaytooTransaction][tr_amount_total_cost]" value="5.0000">
-          params['MerchantApiResponse']['PaytooTransaction']['tr_amount_total_cost']
+          params[:MerchantApiResponse][:PaytooTransaction][:tr_amount_total_cost]
         end
 
         def hash
           #     <input type="hidden" name="MerchantApiResponse[hash]" value="def2e614513fc7cf0d85c97167fb10ab">
 
-        params['MerchantApiResponse']['hash']
+        params[:MerchantApiResponse][:hash]
         end
 
         # The total in fees which was deducted from the amount.
         def fee
-          params['amount_fee']
+          params[:amount_fee]
         end
 
 
         def currency
-          'USD'
+          params[:MerchantApiResponse][:PaytooTransaction][:tr_from_currency]
         end
 
         # Generated hash depends on params order so use OrderedHash instead of Hash
