@@ -1,7 +1,6 @@
 module OffsitePayments #:nodoc:
   class Notification
     attr_accessor :params
-    attr_accessor :raw
 
     # set this to an array in the subclass, to specify which IPs are allowed
     # to send requests
@@ -11,10 +10,10 @@ module OffsitePayments #:nodoc:
     #   - +doc+ ->     raw post string
     #   - +options+ -> custom options which individual implementations can
     #                  utilize
-    def initialize(post, options = {})
+    def initialize(params, options = {})
       @options = options
+      self.params = params
       empty!
-      parse(post)
     end
 
     def status
@@ -57,15 +56,5 @@ module OffsitePayments #:nodoc:
       ActiveUtils::CurrencyCode.standardize(currency)
     end
 
-    private
-
-    # Take the posted data and move the relevant data into a hash
-    def parse(post)
-      @raw = post.to_s
-      for line in @raw.split('&')
-        key, value = *line.scan( %r{^([A-Za-z0-9_.-]+)\=(.*)$} ).flatten
-        params[key] = CGI.unescape(value.to_s) if key.present?
-      end
-    end
   end
 end
