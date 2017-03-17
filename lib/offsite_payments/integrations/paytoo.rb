@@ -400,7 +400,6 @@ module OffsitePayments #:nodoc:
         # Was the transaction complete?
         def complete?
           #     <input type="hidden" name="MerchantApiResponse[request_status]" value="completed">
-          byebug
         params[:MerchantApiResponse][:request_status] = "completed"
         end
 
