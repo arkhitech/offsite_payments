@@ -399,7 +399,8 @@ module OffsitePayments #:nodoc:
 
         # Was the transaction complete?
         def complete?
-          status == "Completed"
+          #     <input type="hidden" name="MerchantApiResponse[request_status]" value="completed">
+        params['MerchantApiResponse']['request_status'] == "completed"
         end
 
         #             <input type="hidden" name="MerchantApiResponse[status]" value="OK">
@@ -418,6 +419,12 @@ module OffsitePayments #:nodoc:
         def status
           #             <input type="hidden" name="MerchantApiResponse[status]" value="OK">
           params['MerchantApiResponse']['status']
+        end
+
+        def order_ref
+
+          params['order_ref']
+
         end
 
         def request_status
