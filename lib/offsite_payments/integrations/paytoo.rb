@@ -172,10 +172,9 @@ module OffsitePayments #:nodoc:
           add_field('user[zipcode]', '10000')
           add_field('user[city]', 'Test')
           add_field('hash', "#{ENV['PAYTOO_HASH']}")
-          add_field('completed_url', ENV['completed_url'])
-          add_field('cancelled_url', ENV['cancelled_url'])
-          add_field('rejected_url', ENV['rejected_url'])
-
+          add_field('completed_url', 'http://locker81.arkhitech.com/paytoo/success')
+          add_field('cancelled_url', 'http://locker81.arkhitech.com/paytoo/cancel')
+          add_field('rejected_url', 'http://locker81.arkhitech.com/paytoo/cancel')
 
             end
 
