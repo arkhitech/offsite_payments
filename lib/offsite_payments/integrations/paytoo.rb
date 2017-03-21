@@ -157,24 +157,24 @@ module OffsitePayments #:nodoc:
 
 
             def initialize(order, account, options = {})
-          super
-          add_field('merchant_id', account)
-          add_field('order_ref', order)
-          add_field('amount', 55)
-          add_field('currency', 'USD')
-          add_field('user[email]', 'test@test.com')
-          add_field('user[firstname]', 'Ghias')
-          add_field('user[lastname]', 'Arshad')
-          add_field('user[phone_field1]', '111')
-          add_field('user[phone_field2]', '222')
-          add_field('user[phone_field3]', '3333')
-          add_field('user[address]', '125 Maiden Lane, 11th Floor')
-          add_field('user[zipcode]', '10000')
-          add_field('user[city]', 'Test')
-          add_field('hash', "#{ENV['PAYTOO_HASH']}")
-          add_field('completed_url', 'https://www.locker81app.com/paytoo/success')
-          add_field('cancelled_url', 'https://www.locker81app.com/paytoo/cancel')
-          add_field('rejected_url', 'https://www.locker81app.com/paytoo/cancel')
+              super
+              add_field('merchant_id', account)
+              add_field('order_ref', order)
+              add_field('amount', 55)
+              add_field('currency', 'USD')
+              add_field('user[email]', 'test@test.com')
+              add_field('user[firstname]', 'Ghias')
+              add_field('user[lastname]', 'Arshad')
+              add_field('user[phone_field1]', '111')
+              add_field('user[phone_field2]', '222')
+              add_field('user[phone_field3]', '3333')
+              add_field('user[address]', '125 Maiden Lane, 11th Floor')
+              add_field('user[zipcode]', '10000')
+              add_field('user[city]', 'Test')
+              add_field('hash', "#{ENV['PAYTOO_HASH']}")
+              add_field('completed_url', 'https://www.locker81app.com/paytoo/success')
+              add_field('cancelled_url', 'https://www.locker81app.com/paytoo/cancel')
+              add_field('rejected_url', 'https://www.locker81app.com/paytoo/cancel')
 
             end
 
