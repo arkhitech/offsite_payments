@@ -399,7 +399,7 @@ module OffsitePayments #:nodoc:
         # Was the transaction complete?
         def complete?
           #     <input type="hidden" name="MerchantApiResponse[request_status]" value="completed">
-        params[:MerchantApiResponse][:PaytooRequest][:status] == "completed"
+          params[:MerchantApiResponse][:status] == "OK"
         end
 
         #             <input type="hidden" name="MerchantApiResponse[status]" value="OK">
