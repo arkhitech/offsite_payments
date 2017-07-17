@@ -27,7 +27,7 @@ module OffsitePayments #:nodoc:
             add_field('postBackURL', options[:return_url])
             
           else
-            expiry_date=(Time.now+1.hour).strftime("%Y%m%d %H%M%S")
+            expiry_date=(Time.now.tomorrow).strftime("%Y%m%d %H%M%S")
             request_params = {
               'storeId' => options[:account_name],
               'amount' => options[:amount].to_s,
