@@ -172,9 +172,9 @@ module OffsitePayments #:nodoc:
               add_field('user[zipcode]', '10000')
               add_field('user[city]', 'Test')
               add_field('hash', "#{ENV['PAYTOO_HASH']}")
-              add_field('completed_url', 'https://mlmcustomer.org/paytoo/success')
-              add_field('cancelled_url', 'https://mlmcustomer.org/paytoo/cancel')
-              add_field('rejected_url', 'https://mlmcustomer.org/paytoo/cancel')
+              add_field('completed_url', 'https://www.mlmcustomer.org/paytoo/success')
+              add_field('cancelled_url', 'https://www.mlmcustomer.org/paytoo/cancel')
+              add_field('rejected_url', 'https://www.mlmcustomer.org/paytoo/cancel')
 
             end
 
