@@ -5,7 +5,7 @@ module OffsitePayments #:nodoc:
     module EasyPaisa
 
       module_function
-    
+
       class Helper < OffsitePayments::Helper
 
 
@@ -16,16 +16,16 @@ module OffsitePayments #:nodoc:
             "https://easypay.easypaisa.com.pk/easypay/Index.jsf"
           end
         end
-        
+
         attr_accessor :errors
 
-        def initialize(order, account, options = {})   
-          super   
+        def initialize(order, account, options = {})
+          super
           if options[:authcode]
-            
+
             add_field('auth_token', options[:authcode])
             add_field('postBackURL', options[:return_url])
-            
+
           else
             expiry_date=(Time.now.tomorrow).strftime("%Y%m%d %H%M%S")
             request_params = {
@@ -35,9 +35,9 @@ module OffsitePayments #:nodoc:
               'orderRefNum'=> "#{order}",
               'expiryDate' => "#{expiry_date}",
               'autoRedirect' => '0',
-              'paymentMethod' => 'CC_PAYMENT_METHOD', 
-              'emailAddr' => options[:credential2], 
-              'mobileNum' => options[:credential3]     
+              'paymentMethod' => 'CC_PAYMENT_METHOD',
+              'emailAddr' => options[:credential2],
+              'mobileNum' => options[:credential3]
             }
 
             add_field('storeId', options[:account_name])
@@ -51,45 +51,45 @@ module OffsitePayments #:nodoc:
             add_field('mobileNum', options[:credential3])
             add_field('merchantHashedReq', signed_request(options[:credential4], request_params))
           end
-         
-        end 
-        
-                
+
+        end
+
+
         def errors
           @error ||= []
         end
-        
+
         require 'openssl'
         require 'base64'
-        
+
         def encrypt(raw_data, key)
           cipher = OpenSSL::Cipher.new("AES-128-ECB")
           cipher.encrypt()
-          
+
           #convert key to hex key and pack (requirement for java padding
-          hex_key = key.bytes.map { |b| sprintf("%02X",b) }.join  
+          hex_key = key.bytes.map { |b| sprintf("%02X",b) }.join
           key = [hex_key].pack('H*')
-          
+
           cipher.key = key
           crypt = cipher.update(raw_data) + cipher.final
 
-          Base64.encode64(crypt)
+          Base64.encode64(crypt).gsub("\n",'')
         end
 
         def signed_request(hashKey, request_params)
           sorted_keys = request_params.keys.sort
           sorted_pairs = []
           sorted_keys.each do |key|
-            sorted_pairs << "key=#{request_params[key]}"
+            sorted_pairs << "#{key}=#{request_params[key]}"
           end
-          
+
           encrypt(sorted_pairs.join('&'), hashKey)
         end
-        
+
 
         # Replace with the real mapping
 
-        
+
 #        mapping :store_id, 'store_id'
 #        mapping :amount, 'amount'
 #        mapping :post_back_url, 'postBackURL'
@@ -100,9 +100,9 @@ module OffsitePayments #:nodoc:
 #        mapping :payment_method, 'paymentMethod'
 #        mapping :email_address, 'emailAddr'
 #        mapping :phone_number, 'mobileNum'
-        
-        
-        
+
+
+
 #        mapping :auth_token, 'AuthToken'
 
 
@@ -121,39 +121,39 @@ module OffsitePayments #:nodoc:
         # mapping :tax, ''
         # mapping :shipping, ''
       end
-      
-      
+
+
       class Notification < OffsitePayments::Notification
-        
+
         def errors
           @error ||= []
         end
-        
+
         def identifier
           params[:identifier]
         end
-        
+
         def amount
           params[:amount].to_f
         end
-        
-        
+
+
         def transaction_number
           params[:transactionNumber]
         end
-        
+
         def authorization
           transaction_number
         end
-        
+
         def avs_result
           {}
         end
-        
+
         def cvv_result
           nil
         end
-        
+
         def acknowledge(authcode = nil)
           unless params[:success]=="true" && params[:transactionResponse]=="Transaction Successful."
             errors << "Transaction Unsuccessful. For more information, please contact your card issuing bank."
@@ -162,12 +162,12 @@ module OffsitePayments #:nodoc:
             true
           end
         end
-        
+
         def success?
           errors.empty?
         end
-        
-        
+
+
                 # Take the posted data and move the relevant data into a hash
         def parse(post)
           case post
@@ -180,14 +180,14 @@ module OffsitePayments #:nodoc:
             for line in @raw.split('&')
               key, value = *line.scan( %r{^([A-Za-z0-9_.-]+)\=(.*)$} ).flatten
               params[key] = CGI.unescape(value.to_s) if key.present?
-            end            
+            end
           end
         end
-          
+
       end
-      
-      
-      
+
+
+
     end
   end
 end
