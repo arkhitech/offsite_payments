@@ -10,10 +10,18 @@ module OffsitePayments #:nodoc:
 
 
         def credential_based_url
-          if self.fields['authcode']
-            "https://easypay.easypaisa.com.pk/easypay/Confirm.jsf"
+          unless test?
+            if self.fields['authcode']
+              'https://easypay.easypaisa.com.pk/easypay/Confirm.jsf'
+            else
+              'https://easypay.easypaisa.com.pk/easypay/Index.jsf'
+            end
           else
-            "https://easypay.easypaisa.com.pk/easypay/Index.jsf"
+            if self.fields['authcode']
+              'https://easypaystg.easypaisa.com.pk/easypay/Confirm.jsf'
+            else
+              'https://easypaystg.easypaisa.com.pk/easypay/Index.jsf'
+            end
           end
         end
 
