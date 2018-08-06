@@ -47,6 +47,7 @@ Gem::Specification.new do |s|
   s.add_dependency('nokogiri', ">= 1.8.5")
   s.add_dependency('actionpack', '>= 5.2.3')
   s.add_dependency('actionview','>= 5.1.6.2')
+  s.add_dependency('savon', '>= 2.12.0')
 
   s.add_development_dependency('rake')
   s.add_development_dependency('test-unit', '~> 3.0')
