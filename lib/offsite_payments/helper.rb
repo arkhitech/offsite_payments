@@ -27,7 +27,7 @@ module OffsitePayments #:nodoc:
     # * return_url
     # * redirect_param
     def initialize(order, account, options = {})
-      options.assert_valid_keys([:amount, :currency, :test, :credential2, :credential3, :credential4, :country, :account_name, :description, :transaction_type, :authcode, :notify_url, :return_url, :redirect_param, :forward_url, :checkout_token])
+      options.assert_valid_keys([:amount, :currency, :test, :credential2, :credential3, :credential4, :country, :account_name, :description, :transaction_type, :authcode, :notify_url, :return_url, :redirect_param, :forward_url, :checkout_token, :auto_capture])
       @fields             = {}
       @raw_html_fields    = []
       @test               = options[:test]
@@ -42,6 +42,7 @@ module OffsitePayments #:nodoc:
       self.return_url     = options[:return_url]
       self.redirect_param = options[:redirect_param]
       self.checkout_token = options[:checkout_token]
+      self.auto_capture = options[:auto_capture] if options[:auto_capture]
     end
 
     # Add a mapping between attribute name and gateway specific field name.
