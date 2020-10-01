@@ -6,7 +6,7 @@ module OffsitePayments #:nodoc:
       mattr_accessor :test_url
       self.test_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
       mattr_accessor :production_url
-      self.production_url = 'https://jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
+      self.production_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
 
       def self.service_url
         mode = OffsitePayments.mode
@@ -40,6 +40,7 @@ module OffsitePayments #:nodoc:
           add_field('pp_BankID', options[:pp_BankID])
           add_field('pp_ProductID', options[:pp_ProductID])
           add_field('pp_TxnRefNo', options[:pp_TxnRefNo])
+          add_field('pp_BillReference', options[:pp_BillReference])
           add_field('pp_Amount', options[:pp_Amount])
           add_field('pp_TxnCurrency', options[:pp_TxnCurrency])
           add_field('pp_TxnDateTime', options[:pp_TxnDateTime])
