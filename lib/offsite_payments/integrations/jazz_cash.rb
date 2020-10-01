@@ -6,7 +6,7 @@ module OffsitePayments #:nodoc:
       mattr_accessor :test_url
       self.test_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
       mattr_accessor :production_url
-      self.production_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
+      self.production_url = 'https://jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
 
       def self.service_url
         mode = OffsitePayments.mode
