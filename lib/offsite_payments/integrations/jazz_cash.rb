@@ -6,7 +6,7 @@ module OffsitePayments #:nodoc:
       mattr_accessor :test_url
       self.test_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
       mattr_accessor :production_url
-      self.production_url = 'https://jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
+      self.production_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
 
       def self.service_url
         mode = OffsitePayments.mode
@@ -69,46 +69,65 @@ module OffsitePayments #:nodoc:
 
         def initialize(post, options = {})
           super
+          @raw = post
+          @params = post
+        end
+
+        def errors
+          @error ||= []
+        end
+
+        def identifier
+          @params['pp_BillReference']
+        end
+        
+        def order_ref_number
+          @params['pp_BillReference']
+        end
+        
+        def transaction_number
+          @params['pp_TxnRefNo']
         end
         
         def complete?
-          status == "Completed"
+          @params['pp_ResponseCode'] == '000'
         end
         
         def status
-          params['payment_status']
+          @params['pp_ResponseCode']
+        end
+
+        def success
+          @params['pp_ResponseCode']
+        end
+        
+        def success?
+          @params['pp_ResponseCode'] == '000'
         end
 
         def account
-          params['pp_Amount']
+          @params['pp_BillReference']
         end
 
-        # Acknowledge the transaction to paypal. This method has to be called after a new
-        # ipn arrives. Paypal will verify that all the information we received are correct and will return a
-        # ok or a fail.
-        #
-        # Example:
-        #
-        #   def paypal_ipn
-        #     notify = PaypalNotification.new(request.raw_post)
-        #
-        #     if notify.acknowledge
-        #       ... process order ... if notify.complete?
-        #     else
-        #       ... log possible hacking attempt ...
-        #     end
+        def authorization
+          @params['pp_SecureHash']
+        end
+
+        def avs_result
+          {}
+        end
         
-        def acknowledge(authcode = nil)
-          # payload =  raw
-          #
-          # response = ssl_post(Paypal.service_url + '?cmd=_notify-validate', payload,
-          #   'Content-Length' => "#{payload.size}",
-          #   'User-Agent'     => "Active Merchant -- http://activemerchant.org"
-          # )
-          #
-          # raise StandardError.new("Faulty paypal result: #{response}") unless ["VERIFIED", "INVALID"].include?(response)
-          #
-          # response == "VERIFIED"
+        def cvv_result
+          nil
+        end
+
+        def acknowledge
+          if @params['pp_ResponseCode'] == '000'
+            true
+          else
+            errors << "#{@params['pp_ResponseMessage']}"
+            false
+          end
         end
       end
 
