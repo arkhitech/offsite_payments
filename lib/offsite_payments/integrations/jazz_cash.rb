@@ -2,22 +2,9 @@ module OffsitePayments #:nodoc:
   module Integrations #:nodoc:
     module JazzCash
       #JazzCash Integration for HTTP Redirect v1.1
-      
-      mattr_accessor :test_url
-      self.test_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
-      mattr_accessor :production_url
-      self.production_url = 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/'
 
       def self.service_url
-        mode = OffsitePayments.mode
-        case mode
-        when :production
-          self.production_url
-        when :test
-          self.test_url
-        else
-          raise StandardError, "Integration mode set to an invalid value: #{mode}"
-        end
+        ENV['jazz_cash_service_url']
       end
 
       def self.notification(post, options = {})
