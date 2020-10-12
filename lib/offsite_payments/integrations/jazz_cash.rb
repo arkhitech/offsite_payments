@@ -91,6 +91,18 @@ module OffsitePayments #:nodoc:
         def success?
           @params['pp_ResponseCode'] == '000'
         end
+        
+        def status_message
+          @params['pp_ResponseMessage']
+        end
+        
+        def transaction_type
+          @params['pp_TxnType']
+        end
+        
+        def caller
+          @params['caller']
+        end
 
         def account
           @params['pp_BillReference']
