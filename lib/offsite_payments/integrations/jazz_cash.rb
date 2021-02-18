@@ -3,10 +3,6 @@ module OffsitePayments #:nodoc:
     module JazzCash
       #JazzCash Integration for HTTP Redirect v1.1
 
-      def self.service_url
-        ENV['jazz_cash_service_url']
-      end
-
       def self.notification(post, options = {})
         Notification.new(post)
       end
@@ -16,6 +12,14 @@ module OffsitePayments #:nodoc:
       end
 
       class Helper < OffsitePayments::Helper
+        def credential_based_url
+          unless test?
+            'https://payments.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform'
+          else
+            "https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform"
+          end
+        end
+
         def initialize(order, account, options = {})
           super
           add_field('pp_Version', options[:pp_Version])
@@ -46,9 +50,9 @@ module OffsitePayments #:nodoc:
         mapping :amount, 'pp_Amount'
         mapping :account, 'account'
         mapping :currency, 'pp_TxnCurrency'
-        mapping :notify_url, 'notify_url'
+        # mapping :notify_url, 'notify_url'
         mapping :return_url, 'pp_ReturnURL'
-        mapping :cancel_return_url, 'cancel_return'
+        # mapping :cancel_return_url, 'cancel_return'
       end
       
       class Notification < OffsitePayments::Notification
