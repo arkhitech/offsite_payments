@@ -4,133 +4,61 @@
 module OffsitePayments #:nodoc:
   module Integrations #:nodoc:
     module Ubl
-
-      module_function
-
-      mattr_accessor :service_url
-      #self.service_url = 'https://demo-ipg.comtrust.ae/SPIless/Registration.aspx'
-
-      # def logger
-      #   @logger = Logger.new()
-      # end
-      def self.service_url
-        notification.transaction_for_registration.getProperty('PaymentPage')
-        # @service_url ||= 'www.Testadsfadfadsfasd.com'
-      end
-      
-      def self.notification(post = {})
-        Notification.new(post)
-      end
-      
-      
-#      def initialize(options = {})
-#        #requires!(options, :spi_config_file_path)
-#        super
-#      end
-      
-      def purchase
-        raise 'Purchase not implemented as it is done offline'
-      end
-      
-      def authorize
-        raise 'Authorize not implemented as it is done offline'
-      end
-      
-      def capture(money, authorization, options = {})
-        notification.process_transaction_for_capture(authorization, money.amount, options[:currency] || 'PKR')
-      end
-      def cancel(money, authorization, options = {})
-        notification.process_transaction_for_reversal(authorization, money.amount, options[:currency] || 'PKR')
-      end
-      def void(authorization, options = {})
-        notification.process_transaction_for_refund(authorization)
-      end
-      
-      def errors
-        notification.errors
-      end
-      
-      def notification
-        @notification ||= Notification.new({})
-      end
-      private :notification
-      
-      def transaction_for_finalization_order_id
-        notification.transaction_for_finalization_order_id
-      end
-      
-      def transaction_for_registration_transaction_id
-        notification.transaction_for_registration_transaction_id
-      end
-      
-      def process_transaction_for_registration(payment_amount, payment_currency, order_id, return_path, order_name, auto_capture)
-        notification.process_transaction_for_registration(payment_amount, payment_currency, order_id, return_path, order_name, auto_capture)
-      end
-
+      module_function      
 
       class Helper < OffsitePayments::Helper
-
-        #SERVICE_URL = 'https://www.onlinepayment.com.my/MOLPay/pay/'
-
-
-        # def form_method
-        #   "GET"
-        # end
-
+        attr_accessor :auto_capture
+        
         def credential_based_url
           notification.service_url
         end
-        attr_accessor :errors
+              
+        def purchase
+          raise 'Purchase not implemented as it is done offline'
+        end
+        
+        def authorize
+          raise 'Authorize not implemented as it is done offline'
+        end
+        
+        def capture(money, authorization, options = {})
+          notification.process_transaction_for_capture(authorization, money.amount, options[:currency] || 'PKR')
+        end
+        def cancel(money, authorization, options = {})
+          notification.process_transaction_for_reversal(authorization, money.amount, options[:currency] || 'PKR')
+        end
+        def void(authorization, options = {})
+          notification.process_transaction_for_refund(authorization)
+        end
 
         def initialize(order, account, options = {})   
-          super          
+          super
+          %i(amount currency return_url).each do |option|
+            raise "#{option} is required" unless options[option]
+          end          
           transaction = notification.process_transaction_for_registration(options[:amount], 
             options[:currency],  "#{order}", options[:return_url], account, options[:auto_capture])
           if transaction
             add_field('TransactionID', notification.transaction_for_registration_transaction_id)
             add_field('Style', 'STL:18')
           else            
-            #TODO should not auto submit but show error here
-            self.errors = notification.errors
+            raise "Error registering transaction: #{notification.errors.join("\n")}"
           end
         end        
+
+        mapping :account, :spi_properties_path
+
         def notification
-          @notification ||= Notification.new({})
+          @notification ||= Notification.new({}, spi_properties_path: self.fields['spi_properties_path'])
         end
         private :notification
-
-        # Replace with the real mapping
-
-
-        # mapping :account, 'Customer'
-        # mapping :amount, 'Amount'
-        # mapping :currency, 'Currency'
-        mapping :order, 'TransactionID'
-        # mapping :description, 'OrderInfo'
-        # mapping :return_url, 'ReturnPath'
-        # mapping :notify_url, ''
-        # mapping :cancel_return_url, ''
-
-
-        # mapping :customer, :first_name => '',
-        #                    :last_name  => '',
-        #                    :email      => '',
-        #                    :phone      => ''
-        #
-        # mapping :billing_address, :city     => '',
-        #                           :address1 => '',
-        #                           :address2 => '',
-        #                           :state    => '',
-        #                           :zip      => '',
-        #                           :country  => ''
-        #
-        # mapping :tax, ''
-        # mapping :shipping, ''
       end
 
       class Notification < OffsitePayments::Notification
 
-
+        def spi_properties_path
+          @options[:spi_properties_path]
+        end
         def complete?
           params['']
         end
@@ -394,9 +322,9 @@ module OffsitePayments #:nodoc:
         def execute_transaction(transaction_name, properties, version = '1.0')
           require 'rjb'
           Rjb::load
-          transaction_class = Rjb::import("ae.co.comtrust.payment.IPG.SPIj.Transaction");
+          transaction_class = Rjb::import('ae.co.comtrust.payment.IPG.SPIj.Transaction');
 
-          transaction = transaction_class.new("#{Rails.root}/config/SPI.properties");
+          transaction = transaction_class.new(self.spi_properties_path);
           transaction.initialize(transaction_name, version);
 
           properties.each_pair do |k, v|
@@ -461,7 +389,7 @@ module OffsitePayments #:nodoc:
             errors << "For more information, please contact your card issuing bank."
             false
           else
-            self.amount = Money.new(transaction_for_finalization_amount.to_f * 100)
+            self.amount = Money.new(transaction_for_finalization_amount.to_r * 100)
             true
           end
         end

@@ -12,6 +12,9 @@ module OffsitePayments #:nodoc:
       end
 
       class Helper < OffsitePayments::Helper
+        attr_accessor :salt
+        attr_accessor :valid_till
+
         def credential_based_url
           unless test?
             'https://payments.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform'
@@ -22,42 +25,93 @@ module OffsitePayments #:nodoc:
 
         def initialize(order, account, options = {})
           super
-          add_field('pp_Version', options[:pp_Version])
-          add_field('pp_TxnType', options[:pp_TxnType])
-          add_field('pp_Language', 'EN')
-          add_field('pp_MerchantID', options[:pp_MerchantID])
-          add_field('pp_SubMerchantID', options[:pp_SubMerchantID])
-          add_field('pp_Password', options[:pp_Password])
-          add_field('pp_BankID', options[:pp_BankID])
-          add_field('pp_ProductID', options[:pp_ProductID])
-          add_field('pp_TxnRefNo', options[:pp_TxnRefNo])
-          add_field('pp_BillReference', options[:pp_BillReference])
-          add_field('pp_Amount', options[:pp_Amount])
-          add_field('pp_TxnCurrency', options[:pp_TxnCurrency])
-          add_field('pp_TxnDateTime', options[:pp_TxnDateTime])
-          add_field('pp_Description', options[:pp_Description])
-          add_field('pp_TxnExpiryDateTime', options[:pp_TxnExpiryDateTime])
-          add_field('pp_ReturnURL', options[:pp_ReturnURL])
-          add_field('pp_SecureHash', options[:pp_SecureHash])
-          add_field('ppmpf_1', '1')
-          add_field('ppmpf_2', '2')
-          add_field('ppmpf_3', '3')
-          add_field('ppmpf_4', '4')
-          add_field('ppmpf_5', '5')
         end
 
         mapping :order, 'pp_TxnRefNo'
+        mapping :account, 'pp_MerchantID'
         mapping :amount, 'pp_Amount'
-        mapping :account, 'account'
         mapping :currency, 'pp_TxnCurrency'
-        # mapping :notify_url, 'notify_url'
+        mapping :credential2, 'pp_Password'
         mapping :return_url, 'pp_ReturnURL'
-        # mapping :cancel_return_url, 'cancel_return'
+
+        def transaction_time
+          @transaction_time ||= Time.now
+        end
+            
+        def transaction_time_str
+          transaction_time.strftime("%Y%m%d%H%M%S")
+        end
+      
+        def transaction_expiry_time_str
+          valid_till.strftime("%Y%m%d%H%M%S")
+        end
+      
+        def secure_hash          
+          hash_items = []
+          hash_items << self.salt 
+          hash_items << self.fields['pp_Amount']
+          hash_items << self.fields['pp_BankID']
+          hash_items << self.fields['pp_BillReference']
+          hash_items << self.fields['pp_Description']
+          hash_items << self.fields['pp_Language']
+          hash_items << self.fields['pp_MerchantID']
+          hash_items << self.fields['pp_Password']
+          hash_items << self.fields['pp_ProductID']
+          hash_items << self.fields['pp_ReturnURL']
+          hash_items << self.fields['pp_TxnCurrency']
+          hash_items << self.fields['pp_TxnDateTime']
+          hash_items << self.fields['pp_TxnExpiryDateTime']
+          hash_items << self.fields['pp_TxnDateTime']
+          hash_items << self.fields['pp_Version']
+          hash_items << '1'
+          hash_items << '2'
+          hash_items << '3'
+          hash_items << '4'
+          hash_items << '5'
+          hash_items.join('&')
+
+          OpenSSL::HMAC.hexdigest('SHA256', self.salt, hash_items.join('&'))
+        end
+
+        def form_fields
+          raise 'salt is not set' unless salt
+          raise 'valid_till is not set' unless valid_till
+
+          self.add_field('pp_TxnDateTime', transaction_time_str)
+          self.add_field('pp_TxnExpiryDateTime', transaction_expiry_time_str)      
+          self.add_field('ppmpf_1', '1')
+          self.add_field('ppmpf_2', '2')
+          self.add_field('ppmpf_3', '3')
+          self.add_field('ppmpf_4', '4')
+          self.add_field('ppmpf_5', '5')
+        
+          self.add_field('pp_SecureHash', secure_hash)
+
+          self.fields.assert_valid_keys(%w(pp_ReturnURL pp_Version pp_Language pp_BankID pp_ProductID 
+            pp_IsRegisteredCustomer pp_CustomerID pp_CustomerEmail 
+            pp_CustomerMobile pp_TxnType pp_TxnRefNo pp_MerchantID pp_SubMerchantID pp_Password pp_Amount pp_TxnCurrency 
+            pp_TxnDateTime pp_TxnExpiryDateTime pp_BillReference pp_Description pp_CustomerCardNumber 
+            pp_CustomerCardExpiry pp_CustomerCardCvv pp_SecureHash pp_DiscountedAmount pp_DiscountBank
+            ppmpf_1 ppmpf_2 ppmpf_3 ppmpf_4 ppmpf_5
+            ))
+          super
+        end
       end
       
       class Notification < OffsitePayments::Notification
         include ActiveUtils::PostsData
 
+        # "summaryStatus":"CARD_NOT_ENROLLED",
+        # "pp_CustomerID":"test",
+        # "pp_CustomerEmail":"test@test.com",
+        # "pp_CustomerMobile":"033456789025",
+        # "result_CardEnrolled":"CARD_NOT_ENROLLED",
+        # "c3DSecureID":"20190515095244486750",
+        # "aR_Simple_Html":"",
+        # "secureHash":"",
+        # "pp_IsRegisteredCustomer":"Yes",
+        # "responseCode":"433",
+        # "responseMessage":"Card holder is not enrolled"        
         def initialize(post, options = {})
           super
           @raw = post
@@ -68,28 +122,52 @@ module OffsitePayments #:nodoc:
           @error ||= []
         end
 
-        def identifier
-          @params['pp_BillReference']
+        def summary_status
+          @params['summaryStatus']
         end
         
-        def order_ref_number
-          @params['pp_BillReference']
+        def customer_id
+          @params['pp_CustomerID']
         end
         
-        def transaction_number
-          @params['pp_TxnRefNo']
+        def customer_email
+          @params['pp_CustomerEmail']
         end
         
-        def complete?
-          @params['pp_ResponseCode'] == '000'
+        def customer_mobile
+          @params['pp_CustomerMobile']
+        end
+
+        def result_card_enrolled
+          @params['result_CardEnrolled']
+        end
+
+        def c3d_secure_id
+          @params['c3DSecureID']
         end
         
-        def status
+        def ar_simple_html
+          @params['aR_Simple_Html']
+        end
+
+        def secure_hash
+          @params['secureHash']
+        end
+
+        def is_registered_customer
+          @params['pp_IsRegisteredCustomer']
+        end
+
+        def response_code
           @params['pp_ResponseCode']
         end
 
-        def success
-          @params['pp_ResponseCode']
+        def response_message
+          @params['pp_ResponseMessage']
+        end
+
+        def status
+          response_code
         end
         
         def success?
@@ -97,34 +175,10 @@ module OffsitePayments #:nodoc:
         end
         
         def status_message
-          @params['pp_ResponseMessage']
-        end
-        
-        def transaction_type
-          @params['pp_TxnType']
-        end
-        
-        def caller
-          @params['caller']
+          response_message
         end
 
-        def account
-          @params['pp_BillReference']
-        end
-
-        def authorization
-          @params['pp_SecureHash']
-        end
-
-        def avs_result
-          {}
-        end
-        
-        def cvv_result
-          nil
-        end
-
-        def acknowledge
+        def acknowledge(authcode = nil)
           if @params['pp_ResponseCode'] == '000'
             true
           else
