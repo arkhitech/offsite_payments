@@ -321,7 +321,8 @@ module OffsitePayments #:nodoc:
         
         def execute_transaction(transaction_name, properties, version = '1.0')
           require 'rjb'
-          Rjb::load
+          class_path = "#{File.expand_path("../../../ubl", __FILE__)}/SPIj.jar"
+          Rjb::load(class_path)
           transaction_class = Rjb::import('ae.co.comtrust.payment.IPG.SPIj.Transaction');
 
           transaction = transaction_class.new(self.spi_properties_path);
