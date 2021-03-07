@@ -38,58 +38,34 @@ module OffsitePayments #:nodoc:
           @transaction_time ||= Time.now
         end
             
-        def transaction_time_str
+        def pp_TxnDateTime
           transaction_time.strftime("%Y%m%d%H%M%S")
         end
       
-        def transaction_expiry_time_str
+        def pp_TxnExpiryDateTime
           valid_till.strftime("%Y%m%d%H%M%S")
         end
       
         def secure_hash          
-          hash_items = []
-          hash_items << self.salt 
-          hash_items << self.fields['pp_Amount']
-          hash_items << self.fields['pp_BankID']
-          hash_items << self.fields['pp_BillReference']
-          hash_items << self.fields['pp_Description']
-          hash_items << self.fields['pp_Language']
-          hash_items << self.fields['pp_MerchantID']
-          hash_items << self.fields['pp_Password']
-          hash_items << self.fields['pp_ProductID']
-          hash_items << self.fields['pp_ReturnURL']
-          hash_items << self.fields['pp_TxnCurrency']
-          hash_items << self.fields['pp_TxnDateTime']
-          hash_items << self.fields['pp_TxnExpiryDateTime']
-          hash_items << self.fields['pp_TxnDateTime']
-          hash_items << self.fields['pp_Version']
-          hash_items << '1'
-          hash_items << '2'
-          hash_items << '3'
-          hash_items << '4'
-          hash_items << '5'
-          hash_items.join('&')
-
-          OpenSSL::HMAC.hexdigest('SHA256', self.salt, hash_items.join('&'))
+          hash_items = [salt]
+          fields.keys.sort.each do |key|
+            if key =~ /\App(_|m)/
+              hash_items << fields[key]
+            end
+          end
+          OpenSSL::HMAC.hexdigest('SHA256', salt, hash_items.join('&')).upcase
         end
 
         def form_fields
           raise 'salt is not set' unless salt
-          raise 'valid_till is not set' unless valid_till
 
-          self.add_field('pp_TxnDateTime', transaction_time_str)
-          self.add_field('pp_TxnExpiryDateTime', transaction_expiry_time_str)      
-          self.add_field('ppmpf_1', '1')
-          self.add_field('ppmpf_2', '2')
-          self.add_field('ppmpf_3', '3')
-          self.add_field('ppmpf_4', '4')
-          self.add_field('ppmpf_5', '5')
-        
+          self.add_field('pp_TxnDateTime', pp_TxnDateTime)
+          self.add_field('pp_TxnExpiryDateTime', pp_TxnExpiryDateTime)  if valid_till    
           self.add_field('pp_SecureHash', secure_hash)
 
           self.fields.assert_valid_keys(%w(pp_ReturnURL pp_Version pp_Language pp_BankID pp_ProductID 
-            pp_IsRegisteredCustomer pp_CustomerID pp_CustomerEmail 
-            pp_CustomerMobile pp_TxnType pp_TxnRefNo pp_MerchantID pp_SubMerchantID pp_Password pp_Amount pp_TxnCurrency 
+            pp_IsRegisteredCustomer pp_CustomerID pp_CustomerEmail pp_CustomerMobile 
+            pp_TxnType pp_TxnRefNo pp_MerchantID pp_SubMerchantID pp_Password pp_Amount pp_TxnCurrency 
             pp_TxnDateTime pp_TxnExpiryDateTime pp_BillReference pp_Description pp_CustomerCardNumber 
             pp_CustomerCardExpiry pp_CustomerCardCvv pp_SecureHash pp_DiscountedAmount pp_DiscountBank
             ppmpf_1 ppmpf_2 ppmpf_3 ppmpf_4 ppmpf_5
@@ -151,7 +127,7 @@ module OffsitePayments #:nodoc:
         end
 
         def secure_hash
-          @params['secureHash']
+          @params['pp_SecureHash']
         end
 
         def is_registered_customer
@@ -178,11 +154,42 @@ module OffsitePayments #:nodoc:
           response_message
         end
 
-        def acknowledge(authcode = nil)
-          if @params['pp_ResponseCode'] == '000'
-            true
+        def validate_secure_hash(salt)
+          if secure_hash
+            hash_items = [salt]
+            if @params['pp_Version'] == '2.0'
+              excluded_params = ['pp_SecureHash']
+            else
+              excluded_params = ['pp_SecureHash']#excluded for basic integration errors: , 'pp_ResponseCode', 'pp_ResponseMessage']
+            end
+            @params.keys.sort.each do |k| 
+              if k =~ /\App/ && !excluded_params.include?(k) && @params[k].present?
+                hash_items << @params[k]
+              end
+            end
+            secure_hash == OpenSSL::HMAC.hexdigest('SHA256', salt, hash_items.join('&')).upcase
           else
-            errors << "#{@params['pp_ResponseMessage']}"
+            true
+          end
+        end
+
+        def acknowledge(salt = nil)                   
+          if success?
+            if salt
+              if validate_secure_hash(salt)
+                true
+              else
+                errors << "Response is forged."
+                true
+              end
+            else
+              true
+            end
+          else
+            if salt && !validate_secure_hash(salt)
+              errors << "Response is forged."
+            end
+            errors << "#{@params['pp_ResponseCode']}: #{@params['pp_ResponseMessage']}"
             false
           end
         end
